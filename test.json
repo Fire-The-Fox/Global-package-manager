@@ -1,0 +1,7 @@
+{
+    "package1": {
+        "url": "some_url",
+        "description": "some descrition",
+        "screenshots": "images data"
+    }
+}
