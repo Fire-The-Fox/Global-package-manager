@@ -1,7 +1,90 @@
 {
-    "package1": {
-        "url": "some_url",
-        "description": "some descrition",
-        "screenshots": "images data"
+    "PyCalc": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "PyCalc4": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "PyCalc2": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "PyCalc6": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "PyCalc5": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "PyCalc1": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "PyCalc9": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "PyCalc8": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "Mre": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "GG": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
+    },
+    "PyCalc3": {
+        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc",
+        "description": "Wierd Python Calculator",
+        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
+        "image_name": "PyCalcLogo.png",
+        "screenshots_url": ["https://cdn.discordapp.com/attachments/870959589737250876/871040950535852062/unknown.png", "https://cdn.discordapp.com/attachments/870959589737250876/871041201283956796/unknown.png"],
+        "version": "0.0.1"
     }
 }

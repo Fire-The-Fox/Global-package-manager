@@ -1,5 +1,8 @@
 import subprocess
 import tkinter as tk
+from tkinter import Widget, filedialog
+from tkinter.constants import X
+from wget import download
 from PIL import Image, ImageTk
 import getpass
 import os
@@ -31,7 +34,7 @@ def require_sudo():
     tmp_sudo = tk.Toplevel(root)
     tmp_sudo.wm_overrideredirect(True)
     tmp_sudo.wm_geometry("+%d+%d" % (x-300, y-40))
-    tmp_sudo.bind("<Escape>", lambda _: kill_sudo())
+    tmp_sudo.bind("<Escape>", lambda _: tmp_sudo.destroy())
     tmp_sudo_label = tk.Label(tmp_sudo, width=75, height=10, background="white")
     tmp_sudo_label.pack(ipadx=1)
     tmp_sudo_entry = tk.Entry(tmp_sudo_label, show="*", font=("Calibri", 20))
@@ -42,7 +45,7 @@ def require_sudo():
     tmp_sudo_accept.place(anchor="center", relx=0.1, rely=0.8)
     bind_help(tmp_sudo_accept, "Continue installation")
     unbind_help(tmp_sudo_accept)
-    tmp_sudo_decline = tk.Button(tmp_sudo_label, text="Decline", relief=tk.SUNKEN, command=lambda: kill_sudo())
+    tmp_sudo_decline = tk.Button(tmp_sudo_label, text="Decline", relief=tk.SUNKEN, command=lambda: tmp_sudo.destroy())
     tmp_sudo_decline.place(anchor="center", relx=0.9, rely=0.8)
     bind_help(tmp_sudo_decline, "Cancel Instalation")
     unbind_help(tmp_sudo_decline)
@@ -52,15 +55,56 @@ def require_sudo():
     tmp_sudo_text.place(relx=0.05, rely=0.1)
 
 
-def kill_sudo():
-    tmp_sudo.destroy()
+def move_window(event):
+    pref.geometry('+{0}+{1}'.format(event.x_root, event.y_root))
+   
 
+def preferences():
+    global pref, pref_body
+    output = subprocess.Popen('xrandr | grep "\*" | cut -d" " -f4',shell=True, stdout=subprocess.PIPE).communicate()[0]
+    x, y = str(output).split("x")
+    x = x.strip("b'")
+    y = y[:-3]
+    x = int(x) / 2
+    y = int(y) / 2
+    pref = tk.Toplevel(root)
+    pref.wm_overrideredirect(True)
+    pref.wm_geometry("+%d+%d" % (x-300, y-40))
+    pref.bind("<Escape>", lambda _: pref.destroy())
+    pref_body = tk.Frame(pref, width=500, height=525, bg="white")
+    pref_body.pack(ipadx=1)
+    
+    topbar = tk.Frame(pref_body, bg="black")
+    topbar.place(x=0, y=0, relwidth=1, height=25)
+    topbar.bind("<B1-Motion>", move_window)
+    
+    close_bar = tk.Button(topbar, text="X", font=("Calibri", 15), relief=tk.SUNKEN, foreground="white", activeforeground="white", bd=0, command=lambda: pref.destroy())
+    close_bar.place(anchor="center", rely=0.5, x=480)
+    change_button_color(close_bar, "black")
+    
+    toolbar = tk.Frame(pref_body, bg="lightgray")
+    toolbar.place(x=0,y=25, relwidth=1, height=45)
+    
+    settings = tk.Button(toolbar, text="Settings", font=("Calibri", 20))
+    settings.place(x=0, y=0, relheight=1, width=100)
+    change_button_color(settings, "#2A6CF6")
+    upload = tk.Button(toolbar, text="Upload", font=("Calibri", 20), command=lambda: upload_menu())
+    upload.place(x=100, y=0, relheight=1, width=100)
+    change_button_color(upload, "#2A6CF6")
+    
+
+def upload_menu():
+    PackageFileText = tk.Label(pref_body, text="Please select executable file", bg="white")
+    PackageFileText.place(x=10, y=80)
+    
+    # PackageFile = filedialog.askopenfile()
+    # print(PackageFile.name)
 
 def sudo_pass():
     global password, tmp_sudo_entry, DoThis
     password = tmp_sudo_entry.get()
     DoThis = DoThis.replace("pass", password)
-    kill_sudo()
+    tmp_sudo.destroy()
     os.system(DoThis)
 
 
@@ -121,6 +165,26 @@ max_height_of_generation = 1 / len(menu_options)
 with open("test.json") as file:
     packages = json.load(file)
 
+names = []
+urls = []
+main_images = []
+main_images_names = []
+screenshots = {}
+versions = []
+for i in range(len(packages)):
+    names.append(list(packages.keys())[i])
+    urls.append(packages[list(packages.keys())[i]]["url"])
+    main_images.append(packages[list(packages.keys())[i]]["thumbnail"])
+    main_images_names.append(packages[list(packages.keys())[i]]["image_name"])
+    screenshots[list(packages.keys())[i]] = []
+    for ii in packages[list(packages.keys())[i]]["screenshots_url"]:
+        screenshots[list(packages.keys())[i]].append(ii)
+    versions.append(packages[list(packages.keys())[i]]["version"])
+    if os.path.exists(main_images_names[i]):
+        pass
+    else:
+        download(packages[list(packages.keys())[i]]["thumbnail"])
+
 # ROOT
 
 root = tk.Tk()
@@ -128,7 +192,8 @@ root.configure(width=WIDTH)
 root.configure(height=HEIGHT)
 root.configure(background="white")
 root.title("Some package manager")
-root.minsize(height=500, width=875)
+# root.minsize(height=500, width=875)
+root.resizable(False, False)
 
 # IMAGES
 
@@ -137,6 +202,11 @@ menu_button_image = tk.PhotoImage(file="images/menu_button_image.png")
 search_image = ImageTk.PhotoImage(Image.open("images/search_button_image.png").resize(size=(25, 25)))
 
 # GUI BASE
+
+PackageScroll = tk.Scrollbar(root)
+PackagesPanel = tk.Canvas(root, background="#1C72A9", yscrollcommand=PackageScroll.set, highlightthickness=0)
+PackagesPanel.place(x=0, y=0, height=HEIGHT, width=WIDTH-13)
+
 
 top_bar = tk.Frame(root, background="lightgray")
 top_bar.place(x=0, y=0, relwidth=1, height=50)
@@ -148,7 +218,7 @@ menu_panel = tk.Label(root, background="lightgray")
 
 # GUI BUTTONS
 
-preferences_button = tk.Button(top_bar, image=preferences_button_image, relief=tk.SUNKEN, bd=0)
+preferences_button = tk.Button(top_bar, image=preferences_button_image, relief=tk.SUNKEN, bd=0, command=lambda: preferences())
 preferences_button.place(anchor="center", relx=0.97, rely=0.48, relheight=0.6, relwidth=0.03)
 bind_help(preferences_button, "Preferences button")
 unbind_help(preferences_button)
@@ -184,6 +254,25 @@ for i in range(len(menu_options)):
     bind_help(tmp_button, text=menu_help[i])
     unbind_help(tmp_button)
 
+# Packages Generation
+x = 0
+y = 49
+specy = HEIGHT
+PackageImage = []
+for i in range(len(names)):
+    Package = PackagesPanel.create_rectangle(x, y, x+250, y+250, fill="#1C72A9", outline="#1C72A9")
+    PackageImage.append(ImageTk.PhotoImage(Image.open(main_images_names[i]).resize(size=(175, 175))))
+    PackageThumb = PackagesPanel.create_image(x+250/2, y+250/2-15, image=PackageImage[i])
+    PackagesPanel.tag_bind(PackageThumb, "<Button-1>", lambda _, tmp_i=i: print(names[tmp_i]))
+    PackageText = PackagesPanel.create_text(x+250/2, y+250-25, text=names[i], font=("Calibri", 15))
+    x += 250
+    if x >= 1000:
+        x = 0
+        y += 250
+        specy += 250
+PackagesPanel.configure(scrollregion=(0, 0, 0, specy))
+PackageScroll.place(anchor="n", x=WIDTH-7, y=50, height=500)
+PackageScroll.config(command=PackagesPanel.yview)
 # LOOP
 
 root.mainloop()
