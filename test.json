@@ -1,9 +1,2 @@
 {
-  "PyCalc": {
-        "url": "https://fire-the-fox.github.io/PyCalcRepo/PyCalc.zip",
-        "description": "Python Calculator that can calculate really good.",
-        "thumbnail": "https://fire-the-fox.github.io/PyCalcRepo/PyCalcLogo.png",
-        "screenshots_url": ["https://fire-the-fox.github.io/PyCalcRepo/unknown.png", "https://i.imgur.com/9Ri2xTX.png"],
-        "version": "0.1"
-    }
 }
