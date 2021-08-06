@@ -1,15 +1,19 @@
+from shutil import copy2, make_archive, unpack_archive, rmtree
+from distutils.dir_util import copy_tree
 import subprocess
 import tkinter as tk
 from tkinter import Widget, filedialog
-from tkinter.constants import X
-from wget import download
+import glob
+import wget
 from PIL import Image, ImageTk
 import getpass
 import os
 import json
+from urllib.request import urlopen
+from urllib.error import HTTPError
+from io import BytesIO
 
 # FUNCTIONS
-
 
 def show_hint(object, text : str):
     global tmp_top, tmp_top_label
@@ -23,7 +27,7 @@ def show_hint(object, text : str):
     tmp_top_label.pack(ipadx=1)
     
 
-def require_sudo():
+def require_sudo(funcs, after):
     global tmp_sudo, tmp_sudo_entry
     output = subprocess.Popen('xrandr | grep "\*" | cut -d" " -f4',shell=True, stdout=subprocess.PIPE).communicate()[0]
     x, y = str(output).split("x")
@@ -41,7 +45,7 @@ def require_sudo():
     tmp_sudo_entry.place(anchor="w", relx=0.05, rely=0.5, relheight=0.3, relwidth=0.9)
     bind_help(tmp_sudo_entry, f"Enter sudo password for user {getpass.getuser()}")
     unbind_help(tmp_sudo_entry)
-    tmp_sudo_accept = tk.Button(tmp_sudo_label, text="Accept", relief=tk.SUNKEN, command=lambda: sudo_pass())
+    tmp_sudo_accept = tk.Button(tmp_sudo_label, text="Accept", relief=tk.SUNKEN, command=lambda: sudo_pass(funcs, after))
     tmp_sudo_accept.place(anchor="center", relx=0.1, rely=0.8)
     bind_help(tmp_sudo_accept, "Continue installation")
     unbind_help(tmp_sudo_accept)
@@ -88,24 +92,187 @@ def preferences():
     settings = tk.Button(toolbar, text="Settings", font=("Calibri", 20))
     settings.place(x=0, y=0, relheight=1, width=100)
     change_button_color(settings, "#2A6CF6")
-    upload = tk.Button(toolbar, text="Upload", font=("Calibri", 20), command=lambda: upload_menu())
+    upload = tk.Button(toolbar, text="Create", font=("Calibri", 20), command=lambda: upload_menu())
     upload.place(x=100, y=0, relheight=1, width=100)
     change_button_color(upload, "#2A6CF6")
     
 
 def upload_menu():
-    PackageFileText = tk.Label(pref_body, text="Please select executable file", bg="white")
-    PackageFileText.place(x=10, y=80)
+    global PackageFolder, PackageExe
+    PackageFolderText = tk.Label(pref_body, text="Please select folder to include all required files for package",
+                                 bg="white")
+    PackageFolderText.place(x=10, y=80)
     
-    # PackageFile = filedialog.askopenfile()
-    # print(PackageFile.name)
+    PackageFolder = tk.Entry(pref_body)
+    PackageFolder.place(x=10, y=100, relwidth=0.8)
+    
+    PackageFolderButton = tk.Button(pref_body, text="select", command=lambda: select_folder())
+    PackageFolderButton.place(anchor="w", relx=0.82, y=110)
 
-def sudo_pass():
-    global password, tmp_sudo_entry, DoThis
+    PackageBuildText = tk.Label(pref_body, text="Please write package description", bg="white")
+    PackageBuildText.place(x=10, y=200)
+
+    PackageBuildDescription = tk.Entry(pref_body)
+    PackageBuildDescription.place(x=10, y=220, relwidth=0.8)
+    
+    PackageExeText = tk.Label(pref_body, text="Please select executable file of package", bg="white")
+    PackageExeText.place(x=10, y=120)
+    
+    PackageExe = tk.Entry(pref_body)
+    PackageExe.place(x=10, y=140, relwidth=0.8)
+    
+    PackageExeButton = tk.Button(pref_body, text="select", command=lambda: select_executable())
+    PackageExeButton.place(anchor="w", relx=0.82, y=150)
+    
+    PackageNameText = tk.Label(pref_body, text="Please write package name", bg="white")
+    PackageNameText.place(x=10, y=160)
+    
+    PackageName = tk.Entry(pref_body)
+    PackageName.place(x=10, y=180, relwidth=0.8)
+    
+    PackageVerText = tk.Label(pref_body, text="Please write package version", bg="white")
+    PackageVerText.place(x=10, y=240)
+    
+    PackageVer = tk.Entry(pref_body)
+    PackageVer.place(x=10, y=260, relwidth=0.8)
+    
+    PackageImageText = tk.Label(pref_body, text="Please enter package icon url", bg="white")
+    PackageImageText.place(x=10, y=280)
+    
+    PackageImage = tk.Entry(pref_body)
+    PackageImage.place(x=10, y=300, relwidth=0.8)
+    
+    PackageThumbnails = tk.Label(pref_body, text="Please enter package screenshots url separated by ;", bg="white")
+    PackageThumbnails.place(x=10, y=320)
+    
+    PackageThumbs = tk.Entry(pref_body)
+    PackageThumbs.place(x=10, y=340, relwidth=0.8)
+
+    CreateButton = tk.Button(pref_body, text="Create", command=lambda: GeneratePackage(PackageName.get(),
+                                                                                       PackageFolder.get(),
+                                                                                       PackageImage.get(),
+                                                                                       PackageExe.get(),
+                                                                                       PackageBuildDescription.get(),
+                                                                                       PackageThumbs.get(),
+                                                                                       PackageVer.get()))
+    CreateButton.place(relx=0.8, rely=0.9)
+    change_button_color(CreateButton, "#2A6CF6")
+
+
+def GeneratePackage(name, dir, image, exe, description, screenshot, version):
+    old_dir = os.getcwd()
+    GeneratorData = [name, dir, image, exe, description, screenshot, version]
+    for i in GeneratorData:
+        if len(i) == 0:
+            tk.messagebox.showinfo(title="Package Builder", message="Fill empty fields!")
+            return
+        else:
+            continue
+    try:
+        for i in screenshot.split(";"):
+            ImgURL = i
+            u = urlopen(ImgURL)
+            raw_data = u.read()
+            u.close()
+            del (raw_data)
+    except HTTPError:
+        tk.messagebox.showinfo(title="Package Builder",
+                               message="One of Screenshot images url gives error 403 please type new url")
+        return
+    try:
+        ImgURL = image
+        u = urlopen(ImgURL)
+        raw_data = u.read()
+        u.close()
+        del(raw_data)
+    except HTTPError:
+        tk.messagebox.showinfo(title="Package Builder",
+                               message="Thumbnail image url gives error 403 please type new url")
+        return
+    DesktopFile = """[Desktop Entry]
+Name={name}
+Comment=Python Calculator
+Exec=/home/{user}/SpecialSoftware/{name}{exe}
+Icon=/home/{user}/SpecialSoftware/{name}Icons/{icon}
+Terminal=false
+Type=Application
+Categories=Utility"""
+
+    Packagejson = '''"{name}": {
+        "url": "PackageHostUrl",
+        "description": "{description}",
+        "thumbnail": "{image}",
+        "screenshots_url": {screenshots},
+        "version": "{version}"
+    }'''
+    exe = exe.replace(dir, "")
+    DesktopFile = DesktopFile.replace("{name}", name)
+    os.mkdir(name)
+    os.chdir(name)
+    os.mkdir(name)
+    copy_tree(dir, os.curdir+f"/{name}")
+    Packagejson = Packagejson.replace("{description}", description)
+    Packagejson = Packagejson.replace("{screenshots}", str(screenshot.split(";")))
+    Packagejson = Packagejson.replace("{image}", image)
+    Packagejson = Packagejson.replace("{version}", version)
+    Packagejson = Packagejson.replace("{name}", name)
+    Packagejson = Packagejson.replace("'", '"')
+    wget.download(image)
+    list_of_files = glob.glob('*.png')
+    latest_file = max(list_of_files, key=os.path.getctime)
+    os.mkdir(f"{name}Icons")
+    copy2(latest_file, f"{name}Icons")
+    os.remove(latest_file)
+    DesktopFile = DesktopFile.replace("{icon}", latest_file)
+    DesktopFile = DesktopFile.replace("{exe}", exe)
+    DesktopFile = DesktopFile.replace("{user}", getpass.getuser())
+    with open(f"{name}.desktop", "w") as file:
+        file.write(DesktopFile)
+    os.chdir(old_dir)
+    make_archive(name, "zip", old_dir, name)
+    rmtree(name)
+    print("Then upload that file to some url and then put this into test.json and replace"
+          " PackageHostUrl with url of that file on cloud")
+    print(Packagejson)
+
+def select_folder():
+    file = filedialog.askdirectory()
+    PackageFolder.delete(0, len(PackageFolder.get()))
+    PackageFolder.insert(0, file)
+    
+
+def select_executable():
+    file = filedialog.askopenfile()
+    PackageExe.delete(0, len(PackageExe.get()))
+    PackageExe.insert(0, file.name)
+
+
+def sudo_pass(funcs, after):
+    global password, tmp_sudo_entry, DoThis, old_dir, latest_file, Pname
     password = tmp_sudo_entry.get()
-    DoThis = DoThis.replace("pass", password)
+    try:
+        DoThis = DoThis.replace("pass", password)
+    except NameError:
+        pass
     tmp_sudo.destroy()
-    os.system(DoThis)
+    try:
+        os.system(DoThis)
+    except NameError:
+        try:
+            funcs2 = []
+            for i in funcs:
+                funcs2.append(i.replace("pass", password))
+            for i in funcs2:
+                os.system(i)
+            try:
+                for i in after:
+                    exec(i)
+                tk.messagebox.showinfo(title="Package Installer",
+                                   message="Package was successfully installed")
+            except NameError as E:
+                return
+        except NameError:
+            return
 
 
 def hide_hint():
@@ -133,7 +300,7 @@ def show_menu():
 
 
 def update_os():
-    global  DoThis
+    global DoThis
     DoThis = "echo pass | sudo -S pacman --noconfirm -Syu"
     require_sudo()
 
@@ -152,6 +319,127 @@ def unbind_help(object):
     object.bind("<Leave>", lambda _: hide_hint())
 
 
+def on_mousewheel(event):
+    global PackagesPanel
+    if event.num == 5:
+        PackagesPanel.yview_scroll(int(-1*(event.num*-48/120)), "units")
+    if event.num == 4:
+        PackagesPanel.yview_scroll(int(-1*((event.num+1)*48/120)), "units")
+
+
+def PackageInfo(package_name):
+    global ScreenShots, currentScreenshot, PackageImageSwitch, PackagePanel
+    PackagePanel = tk.Label(root, background="#1C72A9", highlightthickness=0)
+    PackagePanel.place(x=0, y=50, height=HEIGHT, width=WIDTH)
+    PackagesPanel.place_forget()
+    PackageScroll.place_forget()
+
+    PackageName = tk.Label(PackagePanel, text=package_name, background="#1C72A9", font=("Calibri", 25))
+    PackageName.place(x=60, y=10)
+    currentScreenshot = 0
+    ScreenShots = []
+    for i in screenshots[package_name]:
+        Description = Descriptions[package_name]
+        ImgURL = i
+        u = urlopen(ImgURL)
+        raw_data = u.read()
+        u.close()
+        Tmp_Image = Image.open(BytesIO(raw_data))
+        tmp_height, tmp_width = Tmp_Image.size
+        if tmp_width > 256:
+            Tmp_Image = Tmp_Image.resize(size=(256, 256))
+        else:
+            Tmp_Image = Tmp_Image.resize(size=(256, tmp_width))
+        ScreenShots.append(Tmp_Image)
+
+    BackButton = tk.Button(PackagePanel, text="Back", command=ReturnToPackages)
+    BackButton.place(x=0, y=0)
+    Imag = ImageTk.PhotoImage(ScreenShots[currentScreenshot])
+    PackageImageSwitch = tk.Label(PackagePanel, image=Imag, highlightthickness=0, bd=0)
+    PackageImageSwitch.photo = Imag
+    PackageImageSwitch.place(x=60, y=50)
+
+    PackageButtonLeft = tk.Button(PackagePanel, text="->", command=right_image)
+    PackageButtonLeft.place(x=20+297, y=150)
+
+    PackageButtonRight = tk.Button(PackagePanel, text="<-", command=left_image)
+    PackageButtonRight.place(x=20, y=150)
+
+    PackageDescription = tk.Text(PackagePanel, bg="#1C72A9", bd=0, font=("Calibri", 15), highlightthickness=0, selectbackground="#1C72A9")
+    PackageDescription.insert(tk.INSERT, Description)
+    PackageDescription.configure(state=tk.DISABLED)
+    PackageDescription.place(relx=0.37, y=50, width=500, height=HEIGHT-150)
+
+    PackageInstall = tk.Button(PackagePanel, text="Install", command=lambda: InstallThatBoi(package_name))
+    PackageInstall.place(relx=0.9, y=50)
+
+
+def InstallThatBoi(name):
+    global old_dir, latest_file, Pname
+    old_dir = os.getcwd()
+    try:
+        os.mkdir(f"/home/{getpass.getuser()}/SpecialSoftware")
+    except FileExistsError:
+        pass
+    try:
+        wget.download(urls[name])
+        list_of_files = glob.glob('*.zip')
+        latest_file = max(list_of_files, key=os.path.getctime)
+    except ValueError:
+        tk.messagebox.showinfo(title="Package Installer",
+                               message="Package gives error 404 please wait till package owner update's package "
+                                       "download url")
+        return
+    unpack_archive(latest_file, "")
+    os.remove(latest_file)
+    os.chdir(latest_file[:-4])
+    Pname = os.listdir()[0]
+    Pname = Pname.replace("Icons", "")
+    Pname = Pname.replace(".desktop", "")
+    require_sudo([f"echo pass | sudo -S cp -R {Pname} /home/{getpass.getuser()}/SpecialSoftware/",
+                  f"echo pass | sudo -S cp -R {Pname}Icons /home/{getpass.getuser()}/SpecialSoftware/",
+        f"echo pass | sudo -S cp {Pname}.desktop /home/{getpass.getuser()}/.local/share/applications/{Pname}.desktop",
+                  f"echo pass | sudo -S chmod +x /home/{getpass.getuser()}/SpecialSoftware/{Pname}/*"],
+                 [f"os.chdir('{old_dir}')", f'rmtree("{latest_file[:-4]}")'])
+
+
+def ReturnToPackages():
+    global PackagePanel
+    PackagePanel.destroy()
+    del(PackagePanel)
+    PackagesPanel.place(x=0, y=0, height=HEIGHT, width=WIDTH - 13)
+    PackageScroll.place(anchor="n", x=WIDTH - 7, y=50, height=500)
+
+
+def right_image():
+    global ScreenShots, currentScreenshot
+    old_curent = currentScreenshot
+    try:
+        currentScreenshot += 1
+        Imag = ImageTk.PhotoImage(ScreenShots[currentScreenshot])
+        PackageImageSwitch.configure(image=Imag)
+        PackageImageSwitch.photo = Imag
+    except IndexError:
+        currentScreenshot = old_curent
+        pass
+
+
+def left_image():
+    global ScreenShots, currentScreenshot
+    old_curent = currentScreenshot
+    try:
+        currentScreenshot -= 1
+        if currentScreenshot < 0:
+            currentScreenshot = 0
+        Imag = ImageTk.PhotoImage(ScreenShots[currentScreenshot])
+        PackageImageSwitch.configure(image=Imag)
+        PackageImageSwitch.photo = Imag
+    except IndexError:
+        currentScreenshot = old_curent
+        pass
+
+
+
 # VARIABLES
 
 WIDTH = 1000
@@ -159,31 +447,28 @@ HEIGHT = 550
 menu_shown = False
 menu_options = ["Update System", "Update Package Repository"]
 menu_help = ["This will update your entire system", "This will update packages on repository"]
-menu_options_functions = [ 'update_os()', 'update_repo()']
+menu_options_functions = ['update_os()', 'update_repo()']
 max_height_of_generation = 1 / len(menu_options)
 
 with open("test.json") as file:
     packages = json.load(file)
 
 names = []
-urls = []
+urls = {}
 main_images = []
-main_images_names = []
 screenshots = {}
 versions = []
+Descriptions = {}
+zips = []
 for i in range(len(packages)):
     names.append(list(packages.keys())[i])
-    urls.append(packages[list(packages.keys())[i]]["url"])
+    urls[list(packages.keys())[i]] = packages[list(packages.keys())[i]]["url"]
     main_images.append(packages[list(packages.keys())[i]]["thumbnail"])
-    main_images_names.append(packages[list(packages.keys())[i]]["image_name"])
     screenshots[list(packages.keys())[i]] = []
+    Descriptions[list(packages.keys())[i]] = packages[list(packages.keys())[i]]["description"]
     for ii in packages[list(packages.keys())[i]]["screenshots_url"]:
         screenshots[list(packages.keys())[i]].append(ii)
     versions.append(packages[list(packages.keys())[i]]["version"])
-    if os.path.exists(main_images_names[i]):
-        pass
-    else:
-        download(packages[list(packages.keys())[i]]["thumbnail"])
 
 # ROOT
 
@@ -192,6 +477,7 @@ root.configure(width=WIDTH)
 root.configure(height=HEIGHT)
 root.configure(background="white")
 root.title("Some package manager")
+root.configure(background="#1C72A9")
 # root.minsize(height=500, width=875)
 root.resizable(False, False)
 
@@ -205,6 +491,8 @@ search_image = ImageTk.PhotoImage(Image.open("images/search_button_image.png").r
 
 PackageScroll = tk.Scrollbar(root)
 PackagesPanel = tk.Canvas(root, background="#1C72A9", yscrollcommand=PackageScroll.set, highlightthickness=0)
+PackagesPanel.bind_all("<Button-4>", on_mousewheel)
+PackagesPanel.bind_all("<Button-5>", on_mousewheel)
 PackagesPanel.place(x=0, y=0, height=HEIGHT, width=WIDTH-13)
 
 
@@ -258,21 +546,27 @@ for i in range(len(menu_options)):
 x = 0
 y = 49
 specy = HEIGHT
+NoSkip = False
 PackageImage = []
 for i in range(len(names)):
     Package = PackagesPanel.create_rectangle(x, y, x+250, y+250, fill="#1C72A9", outline="#1C72A9")
-    PackageImage.append(ImageTk.PhotoImage(Image.open(main_images_names[i]).resize(size=(175, 175))))
+    ImgURL = main_images[i]
+    u = urlopen(ImgURL)
+    raw_data = u.read()
+    u.close()
+    PackageImage.append(ImageTk.PhotoImage(Image.open(BytesIO(raw_data)).resize(size=(175, 175))))
     PackageThumb = PackagesPanel.create_image(x+250/2, y+250/2-15, image=PackageImage[i])
-    PackagesPanel.tag_bind(PackageThumb, "<Button-1>", lambda _, tmp_i=i: print(names[tmp_i]))
+    PackagesPanel.tag_bind(PackageThumb, "<Button-1>", lambda _, tmp_i=i: PackageInfo(names[tmp_i]))
     PackageText = PackagesPanel.create_text(x+250/2, y+250-25, text=names[i], font=("Calibri", 15))
     x += 250
+    if x == 250 and y >= 500:
+        specy += 250
     if x >= 1000:
         x = 0
         y += 250
-        specy += 250
 PackagesPanel.configure(scrollregion=(0, 0, 0, specy))
 PackageScroll.place(anchor="n", x=WIDTH-7, y=50, height=500)
 PackageScroll.config(command=PackagesPanel.yview)
 # LOOP
-
-root.mainloop()
+if __name__ == '__main__':
+    root.mainloop()
